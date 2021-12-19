@@ -1,5 +1,5 @@
 const express = require("express");
-const authRouter = express.Router;
+const authRouter = express.Router();
 
 const {
   loginAuthentication,
@@ -9,7 +9,9 @@ const {
   githubLoginAuthentication,
 } = require("../controllers/authController");
 
-authRouter.post("/login/github", githubLoginAuthentication);
+// authRouter.post("/login/github", githubLoginAuthentication);
 authRouter.post("/login", loginAuthentication);
 authRouter.post("/register", register);
-authRouter.put("/passowrd", requireAuth, changePassword);
+// authRouter.put("/passowrd", requireAuth, changePassword);
+
+module.exports = authRouter;

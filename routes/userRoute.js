@@ -1,6 +1,6 @@
 const express = require("express");
 const multer = require("multer");
-const userRouter = express.Router;
+const userRouter = express.Router();
 
 const {
   retrieveUser,
