@@ -12,7 +12,6 @@ const PORT = process.env.PORT || 9000;
 
 // Routes
 const apiRouter = require("./routes");
-const helmet = require("helmet");
 app.use(helmet());
 app.use(helmet.hidePoweredBy());
 app.use(cors());
@@ -25,7 +24,6 @@ app.use("/api", apiRouter);
     await mongoose.connect(process.env.MONGO_URI, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
-      useCreateIndex: true,
     });
     console.log("Connected to database.");
   } catch (error) {
@@ -58,3 +56,23 @@ const expressServer = app.listen(PORT, () => {
 const io = socketio(expressServer);
 app.set("socketio", io);
 console.log("Socket.io listening for connections");
+
+// Authenticate before establishing a socket connection
+io.use((socket, next) => {
+  const token = socket.handshake.query.token;
+  if (token) {
+    try {
+      const user = jwt.decode(token, process.env.JWT_SECRET);
+      if (!user) {
+        return next(new Error("Not Authorizated."));
+      }
+      socket.user = user;
+      return next();
+    } catch (error) {
+      next(error);
+    }
+  }
+}).on("connection", (socket) => {
+  socket.join(socket.user.id);
+  console.log("Socket connected: ", socket.id);
+});
