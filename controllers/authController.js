@@ -124,6 +124,16 @@ module.exports.changePassword = () => {};
 
 module.exports.requiredAuth = async (req, res, next) => {
   const { authorization } = req.headers;
+  try {
+    if (authorization) {
+      const user = await this.verifyJwt(authorization);
+      // Allow other middle ware to access the authenticated user detail
+      res.locals.user = user;
+    }
+  } catch (error) {
+    return res.status(401).json({ success: false, error: error });
+  }
+  return next();
 };
 
 module.exports.optionalAuth = () => {};

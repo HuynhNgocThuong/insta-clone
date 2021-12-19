@@ -4,14 +4,18 @@ const fs = require("fs");
 const ObjectId = require("mongoose").Types.ObjectId;
 const filters = require("../utils/filters");
 const axios = require("axios");
+
 // Model
 const Post = require("../models/Post");
 const PostVote = require("../models/PostVote");
+
+// Util
 const {
   formatCloudinaryUrl,
   retrieveComments,
   populatePostsPipeline,
 } = require("../utils/controllerUtils");
+const socketHandler = require("../handlers/sockerHandler");
 
 module.exports.createPost = async (req, res, next) => {
   const user = res.locals.user;
@@ -66,6 +70,8 @@ module.exports.createPost = async (req, res, next) => {
     );
     // Refer: https://www.geeksforgeeks.org/node-js-fs-unlinksync-method/
     fs.unlinkSync(req.file.path);
+
+    // Save post and postvote data into mongodb
     post = new Post({
       image: response.secure_url,
       thumbnailUrl: thumbnailUrl,
@@ -91,5 +97,24 @@ module.exports.createPost = async (req, res, next) => {
     });
   } catch (error) {
     next(error);
+  }
+
+  // Inform to all followers through socket io
+  try {
+    const followersDocument = await Followers.find({ user: user._id });
+    // All follers of user
+    const follwers = followersDocument[0].follwers;
+    const postObject = {
+      ...post.toObject(),
+      author: { username: user.username, avatar: user.avatar },
+      commentData: { commentCount: 0, comments: [] },
+      postVotes: [],
+    };
+    // Send post to all io.user who connected socket io
+    follwers.forEach((follower) => {
+      socketHandler.sendPost(req, postObject, follwers.user);
+    });
+  } catch (error) {
+    console.log(error);
   }
 };

@@ -53,6 +53,8 @@ const expressServer = app.listen(PORT, () => {
   console.log(`Backend listening on port ${PORT}`);
 });
 
+// Refer: https://socket.io/get-started/chat
+// Create new instance socketio with argument the app object
 const io = socketio(expressServer);
 app.set("socketio", io);
 console.log("Socket.io listening for connections");
