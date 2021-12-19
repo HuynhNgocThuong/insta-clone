@@ -74,4 +74,8 @@ module.exports.generateUniqueUsername = async (baseUsername) => {
     console.log(error);
   }
 };
+module.exports.formatCloudinaryUrl = (url, size, thumb) => {
+  // "secure_url": "https://res.cloudinary.com/demo/image/upload/c_pad,h_300,w_400/v1570979139/eneivicys42bq5f2jpn2.jpg"
+  const thumbnailUrl = formatCloudinaryUrl;
+};
 module.exports.populatePostsPipeline = [];

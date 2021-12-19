@@ -1,0 +1,20 @@
+###
+POST http://localhost:3000/api/auth/register
+Content-Type: application/json
+
+{
+    "username": "ThuongHuynh",
+    "fullName": "HuynhNgocThuong",
+    "password": "Cloud0208@",
+    "email" : "thuong.huynh@hitachivantara.com"
+}
+
+###
+POST http://localhost:3000/api/auth/login
+Content-Type: application/json
+Authorization: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpZCI6IjYxYmQ2MWU1ZWIxOGNmYjNhYmJhN2NmNiJ9.hNcfkvq824syfK6K9z8ppa5k04mheWmNgUsQpj6UFPQ
+
+{
+    "usernameOrEmail": "ThuongHuynh",
+    "password": "Cloud0208@"
+}

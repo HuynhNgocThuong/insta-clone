@@ -2,7 +2,8 @@ const mongoose = require("mongoose");
 const validator = require("validator");
 const bcrypt = require("bcrypt");
 const Schema = mongoose.Schema;
-
+const Followers = require("./Follwers");
+const Following = require("./Following");
 const RequestError = require("../errorTypes/RequestError");
 
 const UserSchema = new Schema({
@@ -17,7 +18,7 @@ const UserSchema = new Schema({
       }
     },
   },
-  fullname: {
+  fullName: {
     type: String,
     required: true,
   },
@@ -60,14 +61,14 @@ const UserSchema = new Schema({
   },
 });
 
-UserSchema.pre("save", function () {
+UserSchema.pre("save", function (next) {
   //Refer: https://github.com/kelektiv/node.bcrypt.js
-  const saltRound = 10;
+  const saltRounds = 10;
   // Check password change
   if (this.modifiedPaths().includes("password")) {
-    bcrypt.genSalt(saltRounds, function (err, salt) {
+    bcrypt.genSalt(saltRounds, (err, salt) => {
       if (err) return next(err);
-      bcrypt.hash(this.password, salt, function (err, hash) {
+      bcrypt.hash(this.password, salt, (err, hash) => {
         if (err) return next(err);
         // Store hash in your password DB.
         this.password = hash;
@@ -79,7 +80,7 @@ UserSchema.pre("save", function () {
   }
 });
 
-UserSchema.pre("save", async function () {
+UserSchema.pre("save", async function (next) {
   if (this.isNew) {
     try {
       const document = await User.findOne({
@@ -93,9 +94,10 @@ UserSchema.pre("save", async function () {
           )
         );
       }
-      await mongoose.model("Followers").create({ user: this._id });
-      await mongoose.model("Following").create({ user: this._id });
+      await Followers.create({ user: this._id });
+      await Following.create({ user: this._id });
     } catch (error) {
+      console.log(error);
       return next((error.statusCode = 400));
     }
   }
