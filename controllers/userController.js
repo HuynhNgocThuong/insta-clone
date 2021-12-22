@@ -118,11 +118,67 @@ module.exports.followUser = async (req, res, next) => {
 
 module.exports.retrieveRelatedUsers = async (req, res, next) => {};
 
-module.exports.retrieveFollowers = async (req, res, next) => {};
+module.exports.retrieveFollowers = async (req, res, next) => {
+  const { userId, offset = 0 } = req.params;
+  const user = res.locals.user;
+};
 
-module.exports.retrieveFollowing = async (req, res, next) => {};
+module.exports.retrieveFollowing = async (req, res, next) => {
+  const { userId, offset = 0 } = req.params;
+  const user = res.locals.user;
+};
 
-module.exports.searchUsers = async (req, res, next) => {};
+module.exports.searchUsers = async (req, res, next) => {
+  const { userId, offset = 0 } = req.params;
+  const user = res.locals.user;
+  if (!userId) {
+    return res
+      .status(400)
+      .json({ success: false, error: "Please provide a user to search for." });
+  }
+  try {
+    const users = await User.aggregate([
+      {
+        $match: {
+          username: { $regex: new RegExp(username), $option: "i" },
+        },
+      },
+      {
+        $lookup: {
+          from: "followers",
+          localField: "_id",
+          foreignField: "user",
+          as: "followers",
+        },
+      },
+      { $unwind: "$follwers" },
+      {
+        $addFields: {
+          followersCount: { $size: "$followers.followers" },
+        },
+      },
+      { $sort: { followersCount: -1 } },
+      { $skip: Number(offset) },
+      { $limit: 10 },
+      {
+        $project: {
+          _id: true,
+          username: true,
+          avatar: true,
+          fullName: true,
+        },
+      },
+    ]);
+    if (users.length === 0) {
+      return res
+        .status(404)
+        .send({ error: "Could not find any users matching the criteria." });
+    }
+    return res.send(users);
+  } catch (error) {
+    next(error);
+  }
+};
 
 module.exports.confirmUser = async (req, res, next) => {};
 
@@ -130,6 +186,9 @@ module.exports.changeAvatar = async (req, res, next) => {};
 
 module.exports.removeAvatar = async (req, res, next) => {};
 
-module.exports.updateProfile = async (req, res, next) => {};
+module.exports.updateProfile = async (req, res, next) => {
+  const user = res.locals.user;
+  const { fullName, username, website, bio, email } = req.body;
+};
 
 module.exports.retrieveSuggestedUsers = async (req, res, next) => {};

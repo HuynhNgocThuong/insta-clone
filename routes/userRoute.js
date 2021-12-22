@@ -26,7 +26,7 @@ userRouter.get("/:username/post/:offset", retrievePosts);
 
 userRouter.get("/:userId/:offset/following", requireAuth, retrieveFollowing);
 userRouter.get("/:userId/:offset/followers", requireAuth, retrieveFollowers);
-userRouter.get("/:userId/:offset/search");
+userRouter.get("/:username/:offset/search");
 
 userRouter.put("/confirm", requireAuth, confirmUser);
 userRouter.put(
