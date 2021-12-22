@@ -1,6 +1,9 @@
+// Model
 const User = require("../models/User");
 const ConfirmationToken = require("../models/ConfirmationToken");
+
 const crypto = require("crypto");
+const bcrypt = require("bcrypt");
 const jwt = require("jwt-simple");
 const {
   sendConfirmationEmail,
@@ -13,20 +16,6 @@ const {
   validateUsername,
   validatePassword,
 } = require("../utils/validation");
-
-// module.exports.verifyJwt = (token) => {
-//   try {
-//     const id = jwt.decode(token, process.env.JWT_SECRET);
-//     const user = await User.findOne(
-//       { _id: id },
-//       "email username avatar bookmarks bio fullName confirmed website"
-//     )
-//       .then((user) => user)
-//       .catch((error) => "Not authorized.");
-//   } catch (error) {
-//     return "Not authorized.";
-//   }
-// };
 
 module.exports.verifyJwt = (token) => {
   return new Promise(async (resolve, reject) => {
@@ -113,6 +102,35 @@ module.exports.loginAuthentication = async (req, res, next) => {
     });
   }
   try {
+    const user = await User.findOne({
+      $or: [{ username: usernameOrEmail }, { email: usernameOrEmail }],
+    });
+    if (!user || !user.password) {
+      return res.status(401).json({
+        success: false,
+        error: "The credentials you provide are incorrect, please try again",
+      });
+    }
+    bcrypt.compare(password, user.password, (error, result) => {
+      if (error) {
+        return next(error);
+      }
+      if (!result) {
+        return res.status(401).json({
+          success: false,
+          error: "The credentials you provide are incorrect, please try again",
+        });
+      }
+      res.send({
+        user: {
+          _id: user._id,
+          email: user.email,
+          username: username,
+          avatar: user.avatar,
+        },
+        token: jwt.encode({ id: user._id }, process.env.JWT_SECRET),
+      });
+    });
   } catch (error) {
     next(error);
   }
