@@ -185,10 +185,87 @@ module.exports.confirmUser = async (req, res, next) => {};
 module.exports.changeAvatar = async (req, res, next) => {};
 
 module.exports.removeAvatar = async (req, res, next) => {};
-
+/**
+ *
+ * @param {*} req
+ * @param {*} res
+ * @param {*} next
+ * @return {*}
+ */
 module.exports.updateProfile = async (req, res, next) => {
   const user = res.locals.user;
   const { fullName, username, website, bio, email } = req.body;
+  let confirmationToken = undefined;
+  let updatedFields = {};
+  /**
+   * Update: fullName, username, email, website, bio
+   */
+  try {
+    const userDocument = await User.findOne({ _id: user._id });
+    if (fullName) {
+      const fullNameError = validateFullName(fullName);
+      if (fullNameError)
+        return res.status(400).json({ success: false, error: fullNameError });
+      userDocument.fullName = fullName;
+      updatedFields.fullName = fullName;
+    }
+    if (username) {
+      const usernameError = validateUsername(username);
+      if (usernameError)
+        return res.status(400).json({ success: false, error: usernameError });
+      // Make sure username to update to is not the current one
+      if (username !== user.username) {
+        const existingUser = await User.findOne({ username });
+        if (existingUser)
+          return res
+            .status(400)
+            .json({ success: false, error: "Please choose another username." });
+        userDocument.username = username;
+        updatedFields.username = username;
+      }
+      if (website) {
+        const websiteError = validateWebsite(website);
+        if (websiteError)
+          return res.status(400).json({ success: false, error: websiteError });
+        if (!website.includes("http://") && !website.includes("https://")) {
+          userDocument.website = "https://" + website;
+          updatedFields.website = "https://" + website;
+        }
+        userDocument.website = website;
+        updatedFields.website = website;
+      }
+      if (bio) {
+        const bioError = validateBio(bio);
+        if (bioError)
+          return res.status(400).json({ success: false, error: bioError });
+        userDocument.bio = bio;
+        updatedFields.bio = bio;
+      }
+      if (email) {
+        const emailError = validateEmail(email);
+        if (emailEror)
+          return res.status(400).json({ success: false, error: emailError });
+        // Make sure the email to update to is not the current one
+        if (email !== user.email) {
+          const existingUser = await User.findOne({ email });
+          if (existingUser) {
+            return res.status(400).json({ success: false, error: "" });
+          }
+        }
+      }
+      const updatedUser = await userDocument.save();
+      res.send(updateFields);
+      if (email && email !== user.email) {
+        sendConfirmationEmail(
+          updatedUser.username,
+          updatedUser.email,
+          confirmationToken.token
+        );
+      }
+    }
+  } catch (error) {
+    next(error);
+  }
 };
 
 module.exports.retrieveSuggestedUsers = async (req, res, next) => {};
