@@ -87,10 +87,10 @@ module.exports.loginAuthentication = async (req, res, next) => {
   if (authorization) {
     try {
       const user = await this.verifyJwt(authorization);
-      return res.send({
-        user,
-        token: authorization,
-      });
+      // return res.send({
+      //   user,
+      //   token: authorization,
+      // });
     } catch (error) {
       return res.status(401).json({ success: false, message: error });
     }
@@ -105,6 +105,7 @@ module.exports.loginAuthentication = async (req, res, next) => {
     const user = await User.findOne({
       $or: [{ username: usernameOrEmail }, { email: usernameOrEmail }],
     });
+    console.log(user);
     if (!user || !user.password) {
       return res.status(401).json({
         success: false,
@@ -125,7 +126,7 @@ module.exports.loginAuthentication = async (req, res, next) => {
         user: {
           _id: user._id,
           email: user.email,
-          username: username,
+          username: user.username,
           avatar: user.avatar,
         },
         token: jwt.encode({ id: user._id }, process.env.JWT_SECRET),
@@ -138,7 +139,29 @@ module.exports.loginAuthentication = async (req, res, next) => {
 
 module.exports.githubLoginAuthentication = () => {};
 
-module.exports.changePassword = () => {};
+module.exports.changePassword = async (req, res, next) => {
+  const { oldPassword, newPassword } = req.body;
+  const user = res.locals.user;
+  let currentPassword = undefined;
+  try {
+    const userDocument = await User.findById(user._id);
+    currentPassword = userDocument.password;
+    const result = await bcrypt.compare(oldPassword, currentPassword);
+    if (!result)
+      return res.status(401).json({
+        success: false,
+        erorr: "Your old password was entered incorrectly, please try again.",
+      });
+    const newPasswordError = validatePassword(newPassword);
+    if (newPasswordError)
+      return res.status(401).json({ success: false, error: newPasswordError });
+    userDocument.password = newPassword;
+    await userDocument.save();
+    return res.send();
+  } catch (error) {
+    return next(error);
+  }
+};
 
 module.exports.requiredAuth = async (req, res, next) => {
   const { authorization } = req.headers;
