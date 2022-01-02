@@ -1,6 +1,14 @@
-###
-POST http://localhost:3000/api/auth/register
-Content-Type: application/json
+@hostname = localhost
+@port = 3000
+@host = {{hostname}}:{{port}}
+@contentType = application/json
+@baseUrl = http://localhost:3000/api
+
+@authToken = {{login.response.body.token}}
+
+### Register user - Done
+POST {{baseUrl}}/auth/register
+Content-Type: {{contentType}}
 
 {
     "username": "NgocNguyen",
@@ -9,53 +17,70 @@ Content-Type: application/json
     "email" : "ngoc.nguyen@hitachivantara.com"
 }
 
-### Login ThuongHuynh
-POST http://localhost:3000/api/auth/login
-Content-Type: application/json
-Authorization: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpZCI6IjYxYmQ2MWU1ZWIxOGNmYjNhYmJhN2NmNiJ9.hNcfkvq824syfK6K9z8ppa5k04mheWmNgUsQpj6UFPQ
+### Login ThuongHuynh - Done
+# @name login
+POST {{baseUrl}}/auth/login 
+Content-Type: {{contentType}}
+
 
 {
-    "usernameOrEmail": "ThuongNgoc",
-    "password": "Cloud0208@#"
+    "usernameOrEmail": "ThuongThuong",
+    "password": "Cloud0208@"
 }
 
-### Login NgocNguyen
-POST http://localhost:3000/api/auth/login
-Content-Type: application/json
-Authorization: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpZCI6IjYxYzQ3ZGNmNjJiZjJlYzI2NTc5NzkxNyJ9.ixRuGkrLUHU0bCu1s99e2Hdvn62NusYzkFcawAb-xZ4
+
+### Login NgocNguyen - Done
+POST {{baseUrl}}/auth/login
+Content-Type: {{contentType}}
+Authorization: {{authToken}}
 
 {
     "usernameOrEmail": "ngocnguyen",
     "password": "Cloud0208@"
 }
 
-### Change password
-PUT http://localhost:3000/api/auth/password
-Content-Type: application/json
-Authorization: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpZCI6IjYxYmQ2MWU1ZWIxOGNmYjNhYmJhN2NmNiJ9.hNcfkvq824syfK6K9z8ppa5k04mheWmNgUsQpj6UFPQ
+### Change password - Done
+PUT {{baseUrl}}/auth/password
+Content-Type: {{contentType}}
+Authorization: {{authToken}}
 
 {
-    "newPassword": "Cloud0208@#",
-    "oldPassword": "Cloud0208@"
+    "newPassword": "Cloud0208@",
+    "oldPassword": "Cloud0208@#"
 }
 
-### Update profile
-PUT http://localhost:3000/api/user
-Content-Type: application/json
-Authorization: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpZCI6IjYxYmQ2MWU1ZWIxOGNmYjNhYmJhN2NmNiJ9.hNcfkvq824syfK6K9z8ppa5k04mheWmNgUsQpj6UFPQ
+### Update profile - Done
+PUT {{baseUrl}}/user
+Content-Type: {{contentType}}
+Authorization: {{authToken}}
 
 {
     "fullName": "HuynhNgocThuong",
-    "username": "ThuongNgoc",
+    "username": "ThuongThuong",
     "website": "thuonghuynh.com",
-    "bio": "Lowkey.",
+    "bio": "Hihi",
     "email": "huynhngocthuong0208@gmail.com"
 }
 
-### Follow user
-POST http://localhost:3000/api/user/61c47dcf62bf2ec265797917/follow
-Content-Type: application/json
-Authorization: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpZCI6IjYxYmQ2MWU1ZWIxOGNmYjNhYmJhN2NmNiJ9.hNcfkvq824syfK6K9z8ppa5k04mheWmNgUsQpj6UFPQ
+### Follow user - Done
+POST {{baseUrl}}/user/61c47dcf62bf2ec265797917/follow
+Content-Type: {{contentType}}
+Authorization: {{authToken}}
 
 {
 }
+
+### Change avatar user - User_1
+PUT {{baseUrl}}/user/avatar
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+Authorization: {{authToken}}
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="file"
+
+title
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="image"; filename="User_1.png"
+Content-Type: image/png
+
+< ./image/User_2.png
+------WebKitFormBoundary7MA4YWxkTrZu0gW--

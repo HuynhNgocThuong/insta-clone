@@ -20,7 +20,7 @@ const { requiredAuth, optionalAuth } = require("../controllers/authController");
 // Get suggested for the username
 // userRouter.get("/suggested/:max?", requiredAuth, retrieveSuggestedUsers);
 // Get information username
-// userRouter.get("/:username", requiredAuth, retrieveUser);
+userRouter.get("/:username", requiredAuth, retrieveUser);
 // Get all post of username
 // userRouter.get("/:username/post/:offset", retrievePosts);
 
@@ -29,18 +29,18 @@ const { requiredAuth, optionalAuth } = require("../controllers/authController");
 userRouter.get("/:username/:offset/search", searchUsers);
 
 // userRouter.put("/confirm", requiredAuth, confirmUser);
-// userRouter.put(
-//   "/avatar",
-//   requiredAuth,
-//   multer({
-//     dest: "/temp",
-//     limits: { fieldSize: 8 * 1024 * 1024, fileSize: 1000000 },
-//   }).single("image"),
-//   changeAvatar
-// );
+userRouter.put(
+  "/avatar",
+  requiredAuth,
+  multer({
+    dest: "temp/",
+    limits: { fieldSize: 8 * 1024 * 1024, fileSize: 1000000 },
+  }).single("image"),
+  changeAvatar
+);
 userRouter.put("/", requiredAuth, updateProfile);
 
-// userRouter.delete("/avatar", requiredAuth, removeAvatar);
+userRouter.delete("/avatar", requiredAuth, removeAvatar);
 
 // userRouter.post("/:postId/bookmark", requiredAuth, bookmarkPost);
 userRouter.post("/:userId/follow", requiredAuth, followUser);

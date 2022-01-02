@@ -13,10 +13,45 @@ const {
 const socketHandler = require("../handlers/socketHandler");
 const { sendConfirmationEmail } = require("../utils/controllerUtils");
 const ConfirmationTokenModel = require("../models/ConfirmationToken");
-
+const cloudinary = require("cloudinary").v2;
 const ObjectId = require("mongoose").Types.ObjectId;
+const fs = require("fs");
 
-module.exports.retrieveUser = async (req, res, next) => {};
+/**
+ * @description: Get information of a user, not the user logining
+ * @logic:
+ * - Find user with username
+ * - Get follower of user
+ * - Get following of user
+ * - Get post of user
+ */
+module.exports.retrieveUser = async (req, res, next) => {
+  const user = res.locals.user;
+  const { username } = req.params;
+  try {
+    const user = await User.findOne(
+      { username },
+      "username fullName avatar bio bookmarks _id website"
+    );
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        error: "Could not find a user with that username.",
+      });
+    }
+
+    const posts = await Post.aggregate({});
+
+    const followersDocument = await Followers.findOne({
+      user: ObjectId(user._id),
+    });
+    const followingDocument = await Following.findOne({
+      user: ObjectId(user._id),
+    });
+  } catch (error) {
+    next(error);
+  }
+};
 
 module.exports.retrievePost = async (req, res, next) => {};
 
@@ -195,6 +230,13 @@ module.exports.retrieveFollowing = async (req, res, next) => {
   const user = res.locals.user;
 };
 
+/**
+ * @description: Seach user
+ * @param
+ * @argument
+ * @returns
+ */
+// TODO: Test function search user
 module.exports.searchUsers = async (req, res, next) => {
   const { userId, offset = 0 } = req.params;
   const user = res.locals.user;
@@ -246,7 +288,13 @@ module.exports.searchUsers = async (req, res, next) => {
     next(error);
   }
 };
-
+/**
+ * @description: Confirm account when account was accepted by email
+ * @param {*}
+ * @param {*}
+ * @param {*}
+ */
+//TODO: Not yet implement send email
 module.exports.confirmUser = async (req, res, next) => {
   const { token } = req.body;
   const user = res.locals.user;
@@ -267,17 +315,87 @@ module.exports.confirmUser = async (req, res, next) => {
     next(error);
   }
 };
-
-module.exports.changeAvatar = async (req, res, next) => {};
-
-module.exports.removeAvatar = async (req, res, next) => {};
 /**
- *
+ * @description: Change avatar of user
+ * @logic: {
+ * config to cloudinary
+ * upload file onto cloudinary
+ * update table user with field avatar
+ * }
+ * @param {*}
+ * @param {*}
+ * @param {*}
+ */
+// Refer: https://github.com/expressjs/multer
+module.exports.changeAvatar = async (req, res, next) => {
+  const user = res.locals.user;
+
+  console.log(req.file);
+  if (!req.file) {
+    return res
+      .status(400)
+      .json({ success: false, error: "Please provide the image to upload." });
+  }
+  cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
+  });
+  try {
+    console.log(req.file.path);
+    const response = await cloudinary.uploader.upload(req.file.path, {
+      width: 200,
+      height: 200,
+      gravity: "face",
+      crop: "thumb",
+    });
+    console.log(response);
+    // fs.unlinkSync(req.file.path);
+    const avatarUpdate = await User.updateOne(
+      { _id: user._id },
+      { avatar: response.secure_url }
+    );
+    if (!avatarUpdate.modifiedCount) {
+      throw new Error("Could not update user avatar.");
+    }
+    return res.json({ success: true, avatar: response.secure_url });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * @description: Remove avatar of user
+ * @logic: {
+ * update table user with field avatar is empty
+ * }
+ * @param {*}
+ * @param {*}
+ * @param {*}
+ */
+module.exports.removeAvatar = async (req, res, next) => {
+  const user = req.locals.user;
+  try {
+    const avatarUpdate = await User.updateOne(
+      { _id: user._id },
+      { $unset: { avatar: "" } }
+    );
+    if (!avatarUpdate.modifiedCount) {
+      next(error);
+    }
+    return res.status(204).send({ message: "Remove avatar successful." });
+  } catch (error) {
+    next(error);
+  }
+};
+/**
+ * @description: Update profile of user
  * @param {*} req
  * @param {*} res
  * @param {*} next
  * @return {*}
  */
+//TODO: Done
 module.exports.updateProfile = async (req, res, next) => {
   const user = res.locals.user;
   const { fullName, username, website, bio, email } = req.body;
