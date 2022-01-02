@@ -84,13 +84,14 @@ module.exports.register = async (req, res, next) => {
 module.exports.loginAuthentication = async (req, res, next) => {
   const { authorization } = req.headers;
   const { usernameOrEmail, password } = req.body;
+  // Usecase: User had been login in instagram and still cache authorization
   if (authorization) {
     try {
       const user = await this.verifyJwt(authorization);
-      // return res.send({
-      //   user,
-      //   token: authorization,
-      // });
+      return res.send({
+        user,
+        token: authorization,
+      });
     } catch (error) {
       return res.status(401).json({ success: false, message: error });
     }
@@ -101,6 +102,7 @@ module.exports.loginAuthentication = async (req, res, next) => {
       message: "The credentials you provided are incorrect, please try again.",
     });
   }
+  // Usecase: User not login in instagram
   try {
     const user = await User.findOne({
       $or: [{ username: usernameOrEmail }, { email: usernameOrEmail }],
@@ -170,6 +172,7 @@ module.exports.requiredAuth = async (req, res, next) => {
       const user = await this.verifyJwt(authorization);
       // Allow other middle ware to access the authenticated user detail
       res.locals.user = user;
+      console.log("User login: ", res.locals.user);
     }
   } catch (error) {
     return res.status(401).json({ success: false, error: error });
