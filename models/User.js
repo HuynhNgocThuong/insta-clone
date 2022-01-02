@@ -6,60 +6,65 @@ const Followers = require("./Follwers");
 const Following = require("./Following");
 const RequestError = require("../errorTypes/RequestError");
 
-const UserSchema = new Schema({
-  email: {
-    type: String,
-    required: true,
-    unique: true,
-    lowercase: true,
-    validate: (value) => {
-      if (!validator.isEmail(value)) {
-        throw new Error("Invalid email address.");
-      }
-    },
-  },
-  fullName: {
-    type: String,
-    required: true,
-  },
-  username: {
-    type: String,
-    required: true,
-    lowercase: true,
-    unique: true,
-    minlength: 3,
-  },
-  password: {
-    type: String,
-    minlength: 8,
-  },
-  avatar: String,
-  bio: {
-    type: String,
-    maxlength: 130,
-  },
-  website: {
-    type: String,
-    maxlength: 65,
-  },
-  bookmarks: [
-    {
-      post: {
-        type: Schema.ObjectId,
-        ref: "Post",
+const UserSchema = new Schema(
+  {
+    email: {
+      type: String,
+      required: true,
+      unique: true,
+      lowercase: true,
+      validate: (value) => {
+        if (!validator.isEmail(value)) {
+          throw new Error("Invalid email address.");
+        }
       },
     },
-  ],
-  githubId: Number,
-  private: {
-    type: Boolean,
-    default: false,
+    fullName: {
+      type: String,
+      required: true,
+    },
+    username: {
+      type: String,
+      required: true,
+      lowercase: true,
+      unique: true,
+      minlength: 3,
+    },
+    password: {
+      type: String,
+      minlength: 8,
+    },
+    avatar: String,
+    bio: {
+      type: String,
+      maxlength: 130,
+    },
+    website: {
+      type: String,
+      maxlength: 65,
+    },
+    bookmarks: [
+      {
+        post: {
+          type: Schema.ObjectId,
+          ref: "Post",
+        },
+      },
+    ],
+    githubId: Number,
+    private: {
+      type: Boolean,
+      default: false,
+    },
+    confirmed: {
+      type: Boolean,
+      default: false,
+    },
   },
-  confirmed: {
-    type: Boolean,
-    default: false,
-  },
-});
+  {
+    versionKey: false,
+  }
+);
 
 UserSchema.pre("save", function (next) {
   //Refer: https://github.com/kelektiv/node.bcrypt.js

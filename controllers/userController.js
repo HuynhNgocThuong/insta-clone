@@ -10,8 +10,11 @@ const {
   validateBio,
   validateWebsite,
 } = require("../utils/validation");
-
+const socketHandler = require("../handlers/socketHandler");
 const { sendConfirmationEmail } = require("../utils/controllerUtils");
+const ConfirmationTokenModel = require("../models/ConfirmationToken");
+
+const ObjectId = require("mongoose").Types.ObjectId;
 
 module.exports.retrieveUser = async (req, res, next) => {};
 
@@ -21,9 +24,10 @@ module.exports.bookmarkPost = async (req, res, next) => {};
 
 module.exports.followUser = async (req, res, next) => {
   const { userId } = req.params;
-  const user = req.locals.user;
+  const user = res.locals.user;
   try {
     const userToFollow = await User.findById(userId);
+    console.log("User follow: ", userToFollow);
     if (!userToFollow) {
       return res
         .status(400)
@@ -31,56 +35,43 @@ module.exports.followUser = async (req, res, next) => {
     }
     // Update user following for user
     const followingUpdate = await Following.updateOne(
-      {
-        user: user_id,
-        "follwing.user": { $ne: userId },
-      },
-      {
-        $push: { follwing: { user: userId } },
-      }
+      { user: user._id, "following.user": { $ne: userId } },
+      { $push: { following: { user: userId } } }
     );
     // Update user follower for user userId
-    const followerUpdate = await Follower.updateOne(
-      {
-        user: userId,
-        "followers.user": { $ne: user._id },
-      },
-      {
-        $push: { followers: { user: user._id } },
-      }
+    const followerUpdate = await Followers.updateOne(
+      { user: userId, "followers.user": { $ne: user._id } },
+      { $push: { followers: { user: user._id } } }
     );
-    if (!followingUpdate.nModified || !followerUpdate.nModified) {
-      if (!followingUpdate.ok || !followerUpdate.ok) {
-        return res
-          .status(500)
-          .send({ error: "Could not follow user please try again later." });
-      }
+    console.log("followerUpdate:", followerUpdate);
+    console.log("follwingUpdate:", followingUpdate);
+    if (!followingUpdate.modifiedCount || !followerUpdate.modifiedCount) {
+      // if (!followingUpdate.ok || !followerUpdate.ok) {
+      //   return res
+      //     .status(500)
+      //     .send({ error: "Could not follow user please try again later." });
+      // }
       // Nothing was modified in the above query meaning that the user is already following
       // Unfollow instead
       const followerUnfollowUpdate = await Followers.updateOne(
-        {
-          user: userId,
-          "followers.user": { $ne: user._id },
-        },
-        {
-          $pull: { followers: { user: user._id } },
-        }
+        { user: userId },
+        { $pull: { followers: { user: user._id } } }
       );
-      const followingUnfollowUpdate = await Following.updatOne(
-        {
-          user: user_id,
-          "follwing.user": { $ne: userId },
-        },
-        {
-          $pull: { follwing: { user: userId } },
-        }
+      const followingUnfollowUpdate = await Following.updateOne(
+        { user: user._id },
+        { $pull: { following: { user: userId } } }
       );
-      if (!followerUnfollowUpdate.ok || !followingUnfollowUpdate.ok) {
+      console.log("followerUnfollowUpdate:", followerUpdate);
+      console.log("followingUnfollowUpdate:", followingUpdate);
+      if (
+        !followerUnfollowUpdate.modifiedCount ||
+        !followingUnfollowUpdate.modifiedCount
+      ) {
         return res
           .status(500)
           .send({ error: "Could not Unfollow user please try again later." });
       }
-      return res.send({ success: true, operation: "unfollow" });
+      return res.send({ success: true, operation: "Unfollow user." });
     }
 
     // Notification
@@ -93,7 +84,7 @@ module.exports.followUser = async (req, res, next) => {
 
     const sender = await User.findById(user.id, "username avatar");
     // Note
-    const isFollowing = await Follwing.findOne({
+    const isFollowing = await Following.findOne({
       user: userId,
       "following.user": user._id,
     });
@@ -115,8 +106,84 @@ module.exports.followUser = async (req, res, next) => {
     next(error);
   }
 };
+/**
+ * Retrieves either who a specific user follows or who is following the user.
+ * Also retrieves whether the requesting user is following the returned users
+ * @function retrieveRelatedUsers
+ */
+module.exports.retrieveRelatedUsers = async (
+  user,
+  userId,
+  offset,
+  follwers
+) => {
+  const pipeline = [
+    {
+      $match: { user: ObjectId(userId) },
+    },
+    {
+      $lookup: {
+        from: "users",
+        let: followers
+          ? { userId: "$followers.user" }
+          : { userId: "$following.user" },
+        pipeline: [
+          {
+            $match: {
+              $expr: { $in: ["$_id", "$$userId"] },
+            },
+          },
+          {
+            $skip: Number(offset),
+          },
+          {
+            $limit: 10,
+          },
+        ],
+        as: "users",
+      },
+    },
+    {
+      $lookup: {
+        from: "followers",
+        localField: "users._id",
+        foreignField: "user",
+        as: "userFollowers",
+      },
+    },
+    {
+      $project: {
+        "users._id": true,
+        "users.username": true,
+        "users.avatar": true,
+        "users.fullName": true,
+        userFollowers: true,
+      },
+    },
+  ];
+  const aggregation = followers
+    ? await Followers.aggregate(pipeline)
+    : await Following.aggregate(pipeline);
+  // Make a set to store the IDs off the followed users
+  const followedUsers = new Set();
+  // loop through every follower and add the id to the set if the user's id is in the array
+  aggregation[0].userFollwers.forEach((followingUser) => {
+    if (
+      !!followingUser.followers.find(
+        (follower) => String(follower.user) === String(user._id)
+      )
+    ) {
+      followedUsers.add(String(followingUser.user));
+    }
+  });
+  // Add the isFollowing key to the following object with a value
+  // depending on the outcome of the loop above
+  aggregation[0].users.forEach((followingUser) => {
+    followingUser.isFollowing = followedUsers.has(String(followingUser._id));
+  });
 
-module.exports.retrieveRelatedUsers = async (req, res, next) => {};
+  return aggregation[0].users;
+};
 
 module.exports.retrieveFollowers = async (req, res, next) => {
   const { userId, offset = 0 } = req.params;
@@ -180,7 +247,26 @@ module.exports.searchUsers = async (req, res, next) => {
   }
 };
 
-module.exports.confirmUser = async (req, res, next) => {};
+module.exports.confirmUser = async (req, res, next) => {
+  const { token } = req.body;
+  const user = res.locals.user;
+  try {
+    const confirmationToken = await ConfirmationToken.findOne({
+      token,
+      user: user._id,
+    });
+    if (!confirmationToken) {
+      return res
+        .status(404)
+        .send({ error: "Invalid or expired confirmation link." });
+    }
+    await ConfirmationToken.deleteOne({ token, user: user._id });
+    await User.updateOne({ _id: user._id }, { confirmed: true });
+    return res.send();
+  } catch (error) {
+    next(error);
+  }
+};
 
 module.exports.changeAvatar = async (req, res, next) => {};
 
@@ -223,45 +309,45 @@ module.exports.updateProfile = async (req, res, next) => {
         userDocument.username = username;
         updatedFields.username = username;
       }
-      if (website) {
-        const websiteError = validateWebsite(website);
-        if (websiteError)
-          return res.status(400).json({ success: false, error: websiteError });
-        if (!website.includes("http://") && !website.includes("https://")) {
-          userDocument.website = "https://" + website;
-          updatedFields.website = "https://" + website;
+    }
+    if (website) {
+      const websiteError = validateWebsite(website);
+      if (websiteError)
+        return res.status(400).json({ success: false, error: websiteError });
+      if (!website.includes("http://") && !website.includes("https://")) {
+        userDocument.website = "https://" + website;
+        updatedFields.website = "https://" + website;
+      }
+      userDocument.website = website;
+      updatedFields.website = website;
+    }
+    if (bio) {
+      const bioError = validateBio(bio);
+      if (bioError)
+        return res.status(400).json({ success: false, error: bioError });
+      userDocument.bio = bio;
+      updatedFields.bio = bio;
+    }
+    if (email) {
+      const emailError = validateEmail(email);
+      if (emailError)
+        return res.status(400).json({ success: false, error: emailError });
+      // Make sure the email to update to is not the current one
+      if (email !== user.email) {
+        const existingUser = await User.findOne({ email });
+        if (existingUser) {
+          return res.status(400).json({ success: false, error: "" });
         }
-        userDocument.website = website;
-        updatedFields.website = website;
       }
-      if (bio) {
-        const bioError = validateBio(bio);
-        if (bioError)
-          return res.status(400).json({ success: false, error: bioError });
-        userDocument.bio = bio;
-        updatedFields.bio = bio;
-      }
-      if (email) {
-        const emailError = validateEmail(email);
-        if (emailEror)
-          return res.status(400).json({ success: false, error: emailError });
-        // Make sure the email to update to is not the current one
-        if (email !== user.email) {
-          const existingUser = await User.findOne({ email });
-          if (existingUser) {
-            return res.status(400).json({ success: false, error: "" });
-          }
-        }
-      }
-      const updatedUser = await userDocument.save();
-      res.send(updateFields);
-      if (email && email !== user.email) {
-        sendConfirmationEmail(
-          updatedUser.username,
-          updatedUser.email,
-          confirmationToken.token
-        );
-      }
+    }
+    const updatedUser = await userDocument.save();
+    res.send(updatedFields);
+    if (email && email !== user.email) {
+      sendConfirmationEmail(
+        updatedUser.username,
+        updatedUser.email,
+        confirmationToken.token
+      );
     }
   } catch (error) {
     next(error);

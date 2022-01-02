@@ -15,7 +15,7 @@ Content-Type: application/json
 Authorization: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpZCI6IjYxYmQ2MWU1ZWIxOGNmYjNhYmJhN2NmNiJ9.hNcfkvq824syfK6K9z8ppa5k04mheWmNgUsQpj6UFPQ
 
 {
-    "usernameOrEmail": "ThuongHuynh",
+    "usernameOrEmail": "ThuongNgoc",
     "password": "Cloud0208@#"
 }
 
@@ -37,4 +37,25 @@ Authorization: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpZCI6IjYxYmQ2MWU1ZWIxOGNm
 {
     "newPassword": "Cloud0208@#",
     "oldPassword": "Cloud0208@"
+}
+
+### Update profile
+PUT http://localhost:3000/api/user
+Content-Type: application/json
+Authorization: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpZCI6IjYxYmQ2MWU1ZWIxOGNmYjNhYmJhN2NmNiJ9.hNcfkvq824syfK6K9z8ppa5k04mheWmNgUsQpj6UFPQ
+
+{
+    "fullName": "HuynhNgocThuong",
+    "username": "ThuongNgoc",
+    "website": "thuonghuynh.com",
+    "bio": "Lowkey.",
+    "email": "huynhngocthuong0208@gmail.com"
+}
+
+### Follow user
+POST http://localhost:3000/api/user/61c47dcf62bf2ec265797917/follow
+Content-Type: application/json
+Authorization: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpZCI6IjYxYmQ2MWU1ZWIxOGNmYjNhYmJhN2NmNiJ9.hNcfkvq824syfK6K9z8ppa5k04mheWmNgUsQpj6UFPQ
+
+{
 }

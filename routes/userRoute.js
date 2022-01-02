@@ -16,33 +16,33 @@ const {
   updateProfile,
   retrieveSuggestedUsers,
 } = require("../controllers/userController");
-const { requireAuth, optionalAuth } = require("../controllers/authController");
+const { requiredAuth, optionalAuth } = require("../controllers/authController");
 // Get suggested for the username
-userRouter.get("/suggested/:max?", requireAuth, retrieveSuggestedUsers);
+// userRouter.get("/suggested/:max?", requiredAuth, retrieveSuggestedUsers);
 // Get information username
-userRouter.get("/:username", requireAuth, retrieveUser);
+// userRouter.get("/:username", requiredAuth, retrieveUser);
 // Get all post of username
-userRouter.get("/:username/post/:offset", retrievePosts);
+// userRouter.get("/:username/post/:offset", retrievePosts);
 
-userRouter.get("/:userId/:offset/following", requireAuth, retrieveFollowing);
-userRouter.get("/:userId/:offset/followers", requireAuth, retrieveFollowers);
-userRouter.get("/:username/:offset/search");
+// userRouter.get("/:userId/:offset/following", requiredAuth, retrieveFollowing);
+// userRouter.get("/:userId/:offset/followers", requiredAuth, retrieveFollowers);
+userRouter.get("/:username/:offset/search", searchUsers);
 
-userRouter.put("/confirm", requireAuth, confirmUser);
-userRouter.put(
-  "/avatar",
-  requireAuth,
-  multer({
-    dest: "/temp",
-    limits: { fieldSize: 8 * 1024 * 1024, fileSize: 1000000 },
-  }).single("image"),
-  changeAvatar
-);
-userRouter.put("/", requireAuth, updateProfile);
+// userRouter.put("/confirm", requiredAuth, confirmUser);
+// userRouter.put(
+//   "/avatar",
+//   requiredAuth,
+//   multer({
+//     dest: "/temp",
+//     limits: { fieldSize: 8 * 1024 * 1024, fileSize: 1000000 },
+//   }).single("image"),
+//   changeAvatar
+// );
+userRouter.put("/", requiredAuth, updateProfile);
 
-userRouter.delete("/avatar", requireAuth, removeAvatar);
+// userRouter.delete("/avatar", requiredAuth, removeAvatar);
 
-userRouter.post("/:postId/bookmark", requireAuth, bookmarkPost);
-userRouter.post("/:userId/follow", requireAuth, followUser);
+// userRouter.post("/:postId/bookmark", requiredAuth, bookmarkPost);
+userRouter.post("/:userId/follow", requiredAuth, followUser);
 
 module.exports = userRouter;
