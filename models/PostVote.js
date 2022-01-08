@@ -8,7 +8,7 @@ const PostVoteSchema = new Schema({
   votes: [
     {
       author: {
-        type: Schema.Object,
+        type: Schema.ObjectId,
         ref: "User",
       },
     },

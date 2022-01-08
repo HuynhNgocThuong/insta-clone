@@ -172,7 +172,7 @@ module.exports.requiredAuth = async (req, res, next) => {
       const user = await this.verifyJwt(authorization);
       // Allow other middle ware to access the authenticated user detail
       res.locals.user = user;
-      console.log("User login: ", res.locals.user);
+      // console.log("User login: ", res.locals.user);
     }
   } catch (error) {
     return res.status(401).json({ success: false, error: error });

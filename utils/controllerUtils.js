@@ -51,7 +51,7 @@ module.exports.sendConfirmationEmail = async (
     }
   }
 };
-module.exports.formatCloudinaryUrl = () => {};
+
 module.exports.sendCommentNotification = () => {};
 module.exports.sendMentionNotification = () => {};
 /**
@@ -76,6 +76,11 @@ module.exports.generateUniqueUsername = async (baseUsername) => {
 };
 module.exports.formatCloudinaryUrl = (url, size, thumb) => {
   // "secure_url": "https://res.cloudinary.com/demo/image/upload/c_pad,h_300,w_400/v1570979139/eneivicys42bq5f2jpn2.jpg"
-  const thumbnailUrl = formatCloudinaryUrl;
+  const splitUrl = url.split("upload/");
+  splitUrl[0] += `upload/${
+    size.y && size.x ? `x_${size.x},y_${size.y}` : ""
+  }w_${size.width},h_${size.height}${thumb && ",c_thumb"}/`;
+  const formattedUrl = splitUrl[0] + splitUrl[1];
+  return formattedUrl;
 };
 module.exports.populatePostsPipeline = [];

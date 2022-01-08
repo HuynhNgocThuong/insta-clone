@@ -8,3 +8,8 @@ module.exports.sendNotification = (req, notification) => {
   const io = req.app.get("socketio");
   io.sockets.in(notification.receiver).emit("newNotification", notification);
 };
+
+module.exports.deletePost = (req, postId, receiver) => {
+  const io = req.app.get("socketio");
+  io.sockets.in(receiver).emit("deletePost", postId);
+};

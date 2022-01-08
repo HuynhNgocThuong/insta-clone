@@ -84,3 +84,25 @@ Content-Type: image/png
 
 < ./image/User_2.png
 ------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+
+### Create post
+POST {{baseUrl}}/post
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+Authorization: {{authToken}}
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="caption"
+
+I Love You #love
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="filter"
+
+Clarendon
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="image"; filename="User_1.png"
+Content-Type: image/png
+
+< ./image/User_2.png
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+

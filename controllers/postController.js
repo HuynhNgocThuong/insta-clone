@@ -2,34 +2,34 @@
 const cloudinary = require("cloudinary").v2;
 const fs = require("fs");
 const ObjectId = require("mongoose").Types.ObjectId;
-const filters = require("../utils/filters");
 const axios = require("axios");
-
+const linkify = require("linkifyjs");
 // Model
 const Post = require("../models/Post");
 const PostVote = require("../models/PostVote");
-
+const Followers = require("../models/Follwers");
 // Util
 const {
   formatCloudinaryUrl,
   retrieveComments,
   populatePostsPipeline,
 } = require("../utils/controllerUtils");
-const socketHandler = require("../handlers/sockerHandler");
+const socketHandler = require("../handlers/socketHandler");
+const filters = require("../utils/filters");
 
 module.exports.createPost = async (req, res, next) => {
   const user = res.locals.user;
   const { caption, filter: filterName } = req.body;
   let post = undefined;
-  const filterObject = filter.find((filter) => filter.name === filterName);
-  const hashtag = [];
+  const filterObject = filters.find((filter) => filter.name === filterName);
+  const hashtags = [];
 
   // Refer: https://github.com/Hypercontext/linkifyjs
   // Refer: https://linkify.js.org/docs/
   // Get all hashtag from caption
   linkify.find(caption).forEach((result) => {
     if (result.type === "hashtag") {
-      hashtag.push(result.value.substring(1));
+      hashtags.push(result.value.substring(1));
     }
   });
   // Check file picture from caption
@@ -89,7 +89,7 @@ module.exports.createPost = async (req, res, next) => {
     res.status(201).json({
       success: true,
       data: {
-        ...post.toOject(),
+        ...post.toObject(),
         postVotes: [],
         comments: [],
         author: { avatar: user.avatar, username: user.username },
@@ -103,7 +103,7 @@ module.exports.createPost = async (req, res, next) => {
   try {
     const followersDocument = await Followers.find({ user: user._id });
     // All follers of user
-    const follwers = followersDocument[0].follwers;
+    const followers = followersDocument[0].followers;
     const postObject = {
       ...post.toObject(),
       author: { username: user.username, avatar: user.avatar },
@@ -111,10 +111,51 @@ module.exports.createPost = async (req, res, next) => {
       postVotes: [],
     };
     // Send post to all io.user who connected socket io
-    follwers.forEach((follower) => {
-      socketHandler.sendPost(req, postObject, follwers.user);
+    followers.forEach((follower) => {
+      socketHandler.sendPost(req, postObject, followers.user);
     });
   } catch (error) {
     console.log(error);
   }
 };
+
+module.exports.deletePost = async (req, res, next) => {
+  const { postId } = req.params;
+  const user = res.locals.user;
+  try {
+    const post = await Post.findOne({ _id: postId, author: user._id });
+    if (!post) {
+      return res.status(404).json({
+        success: false,
+        error: "Could not fount a post with that id associated with the user.",
+      });
+    }
+    // This uses pre hooks to delete everything associated with this post i.e comments
+    // Response of deleteOne { "acknowledged" : true, "deletedCount" : 1 }
+    const postDelete = await Post.deleteOne({ _id: postId });
+    if (!postDelete.deletedCount) {
+      return res.status(500).send({ error: "Could not delete the post." });
+    }
+    res.status(204).send();
+  } catch (error) {
+    next(error);
+  }
+  // Inform to all followers through socket io
+  try {
+    const followersDocument = await Followers.find({ user: user._id });
+
+    // All follers of user
+    const followers = followersDocument[0].followers;
+
+    // Infom for user logined
+    socketHandler.deletePost(req, postId, user._id);
+
+    // Delete post to all io.user who connected socket io
+    followers.forEach((follower) => {
+      socketHandler.deletePost(req, postId, follwer.user);
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+module.exports.retrievePost = async (req, res, next) => {};

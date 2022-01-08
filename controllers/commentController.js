@@ -82,8 +82,8 @@ module.exports.createComment = async (req, res, next) => {
     );
     // Find the username of the post author
     const postDocument = await Post.findById(post._id).populate(author);
-    let image = formatCloudinaryUrl(
-      post.image,
+    let imageDocument = formatCloudinaryUrl(
+      postDocument.image,
       {
         height: 50,
         width: 50,
@@ -92,7 +92,7 @@ module.exports.createComment = async (req, res, next) => {
       },
       true
     );
-    sendMentionNotification(req, message, image, postDcument, user);
+    sendMentionNotification(req, message, imageDocument, postDcument, user);
   } catch (error) {
     console.log(error);
   }

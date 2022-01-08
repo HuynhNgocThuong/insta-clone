@@ -12,9 +12,14 @@ const postLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 5,
 });
-const { requireAuth } = require("../controllers/authController");
-const { createPost } = require("../controllers/postController");
+const { requiredAuth } = require("../controllers/authController");
+const {
+  createPost,
+  deletePost,
+  retrivePost,
+} = require("../controllers/postController");
 
-app.post("/", postLimiter, requireAuth, upload, createPost);
-
+postRouter.post("/", postLimiter, requiredAuth, upload, createPost);
+postRouter.delete("/:postId", requiredAuth, deletePost);
+postRouter.get("/:postId", requiredAuth, retrievePost);
 module.exports = postRouter;
